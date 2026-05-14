@@ -473,6 +473,8 @@ class Player:
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.windowed_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.fullscreen = False
         pygame.display.set_caption("OBSTACLE")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
@@ -501,7 +503,18 @@ class Game:
         # Próbáld meg 0.1-0.2 között, hogy lassabb legyen.
         self.waveform_update_interval = 0.07
         self.waveform_thickness = 8 # Új: hullámforma vastagság
-
+    
+    def toggle_fullscreen(self):
+        """Toggle fullscreen mode with the 'F' key."""
+        if not self.fullscreen:
+            info = pygame.display.Info()
+            self.windowed_size = self.screen.get_size()
+            self.screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
+            self.fullscreen = True
+        else:
+            self.screen = pygame.display.set_mode(self.windowed_size)
+            self.fullscreen = False
+        
     def _get_data_path(self, filename):
         """EXE és script módban is működő elérési út"""
         if getattr(sys, 'frozen', False):
@@ -782,11 +795,17 @@ class Game:
                 self.clock.tick(FPS)
 
                 for event in pygame.event.get():
+                    
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
+                        self.toggle_fullscreen()
+
                     if event.type == pygame.QUIT:
                         running = False
                     if self.game_state == "settings":
                         self.settings_panel.handle_event(event)
                     if event.type == pygame.KEYDOWN:
+                        if self.game_state == "menu" and event.key == pygame.K_ESCAPE:
+                            running = False
                         if self.game_state == "menu" and event.key == pygame.K_SPACE:
                             self.reset_game()
                             self.game_state = "playing"
